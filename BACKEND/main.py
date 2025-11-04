@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
@@ -6,9 +7,16 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import re
 
+load_dotenv()
+
 app = Flask(__name__)
 CORS(app)
-limiter = Limiter(app, key_func=get_remote_address, default_limits=["5 per minute"])
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["5 per minute"]
+)
+limiter.init_app(app)
+
 
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
@@ -23,6 +31,7 @@ def check_token():
     expected = os.environ.get("MY_PUBLIC_TOKEN", "")
     if not expected or token != expected:
         return jsonify({"error": "Unauthorized"}), 401
+
 
 @app.route("/analyze_terms", methods=["POST"])
 @limiter.limit("5 per minute")
@@ -44,6 +53,11 @@ def analyze_terms():
     """
 
     try:
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            raise RuntimeError("Missing GEMINI_API_KEY in environment variables")
+        genai.configure(api_key=api_key)
+
         model = genai.GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(prompt)
         result_text = (response.text or "").strip()
@@ -59,7 +73,7 @@ def analyze_terms():
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({
-        "message": "✅ ESECURE Backend is running successfully!",
+        "message": "ESECURE Backend is running successfully!",
         "endpoints": {
             "analyze_terms": "/analyze_terms (POST)"
         }
