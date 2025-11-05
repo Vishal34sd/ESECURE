@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./App.css";
+import "./App.css"; // Keep this if you have global styles or Tailwind setup
 
 const BACKEND_URL =
   (import.meta as any).env?.VITE_BACKEND_URL || "http://127.0.0.1:5000";
@@ -16,29 +16,28 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 🔍 Auto-detect current tab URL (for Chrome Extension)
-const handleFetchActiveTab = async () => {
-  try {
-    if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.query) {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab && tab.url) {
-        setUrl(tab.url);
-        setError("");
+  // 🔍 Auto-detect current tab URL
+  const handleFetchActiveTab = async () => {
+    try {
+      if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.query) {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab && tab.url) {
+          setUrl(tab.url);
+          setError("");
+        } else {
+          setError("No active tab detected.");
+        }
       } else {
-        setError("No active tab detected.");
+        setError("Chrome API not available — open from extension popup.");
       }
-    } else {
-      setError("Chrome API not available — open from extension popup.");
+    } catch (err) {
+      console.error("Tab fetch failed:", err);
+      setError("Unable to fetch current tab URL.");
     }
-  } catch (err) {
-    console.error("Tab fetch failed:", err);
-    setError("Unable to fetch current tab URL.");
-  }
-};
+  };
 
-
-//  what is inside the text area and url input
-const handleAnalyze = async () => {
+  // 🧠 Analyze the terms
+  const handleAnalyze = async () => {
     if (!url.trim() && !text.trim()) {
       alert("Please enter a URL or paste Terms text first.");
       return;
@@ -75,7 +74,7 @@ const handleAnalyze = async () => {
       }
 
       if (res.ok) {
-        setFeedback(data.feedback || "No feedback returned");
+        setFeedback(data.feedback || "No feedback returned.");
         setScore(data.score ?? null);
       } else {
         setError(data.error || `Request failed: ${res.status}`);
@@ -89,13 +88,24 @@ const handleAnalyze = async () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-gray-100 flex items-center justify-center p-6">
-      <div className="w-full max-w-lg bg-gray-900/70 border border-gray-700 backdrop-blur-md rounded-2xl shadow-2xl p-6">
-        <h1 className="text-3xl font-bold text-center text-blue-400 mb-2">
+    <div
+      className="flex items-start justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black text-gray-100 p-4"
+      style={{
+        width: "400px",
+        height: "570px",
+        overflow: "hidden",
+        borderRadius: "16px",
+      }}
+    >
+      <div
+        className="w-full max-w-lg bg-gray-900/70 border border-gray-700 backdrop-blur-md rounded-2xl shadow-2xl p-5 flex flex-col overflow-y-auto"
+        style={{ height: "100%" }}
+      >
+        <h1 className="text-2xl font-bold text-center text-blue-400 mb-2">
           ESECURE Terms Analyzer
         </h1>
 
-        {/* URL Section */}
+        {/* URL Input */}
         <input
           type="text"
           value={url}
@@ -103,6 +113,7 @@ const handleAnalyze = async () => {
           placeholder="Enter or auto-detect website URL..."
           className="w-full bg-gray-800 text-gray-100 border border-gray-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
         />
+
         <button
           onClick={handleFetchActiveTab}
           className="w-full py-2 mb-3 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors"
@@ -110,17 +121,17 @@ const handleAnalyze = async () => {
           Use Current Tab URL
         </button>
 
-        <p className="text-center text-gray-400 mb-6">
+        <p className="text-center text-gray-400 mb-4 text-sm">
           Analyze Terms & Conditions or Privacy Policy for safety and transparency.
         </p>
 
-        {/* Terms Text Section */}
+        {/* Terms Textarea */}
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Paste terms & conditions here (optional)..."
-          rows={8}
-          className="w-full bg-gray-800 text-gray-100 border border-gray-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500"
+          rows={6}
+          className="w-full bg-gray-800 text-gray-100 border border-gray-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 resize-none"
         />
 
         {/* Analyze Button */}
@@ -136,17 +147,18 @@ const handleAnalyze = async () => {
           {loading ? "Analyzing..." : "Analyze"}
         </button>
 
-        {/* Output */}
+        {/* Feedback Output */}
         {feedback && (
-          <div className="mt-6 bg-gray-800 border border-gray-700 rounded-lg p-4 shadow-inner">
-            <h3 className="text-xl font-semibold text-blue-400 mb-2">
+          <div className="mt-5 bg-gray-800 border border-gray-700 rounded-lg p-4 shadow-inner max-h-40 overflow-y-auto">
+            <h3 className="text-lg font-semibold text-blue-400 mb-1">
               Safety Score:{" "}
               <span className="text-green-400">{score ?? "N/A"}/100</span>
             </h3>
-            <p className="text-gray-300 whitespace-pre-wrap">{feedback}</p>
+            <p className="text-white whitespace-pre-wrap text-sm">{feedback}</p>
           </div>
         )}
 
+        {/* Error Output */}
         {error && (
           <div className="mt-4 bg-red-900/40 border border-red-600 text-red-300 p-3 rounded-lg">
             <h3 className="font-semibold">Error:</h3>
@@ -154,9 +166,9 @@ const handleAnalyze = async () => {
           </div>
         )}
 
-        <footer className="mt-6 text-center text-gray-500 text-sm border-t border-gray-700 pt-3">
-          Powered by{" "}
-          <span className="text-blue-400 font-medium">ESECURE AI</span>
+        {/* Footer */}
+        <footer className="mt-auto text-center text-gray-500 text-xs border-t border-gray-700 pt-3">
+          Powered by <span className="text-blue-400 font-medium">ESECURE AI</span>
         </footer>
       </div>
     </div>
